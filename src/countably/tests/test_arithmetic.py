@@ -125,12 +125,12 @@ class TestLength(unittest.TestCase):
 
 
 class TestImmutability(unittest.TestCase):
-    def test_constant_is_frozen(self) -> None:
+    def test_sequence_is_frozen(self) -> None:
         from dataclasses import FrozenInstanceError
 
         seq = constant(7)
         assert_that(
-            calling(setattr).with_args(seq, "value", 8),
+            calling(setattr).with_args(seq, "_computation", None),
             raises(FrozenInstanceError),
         )
 

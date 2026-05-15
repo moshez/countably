@@ -4,28 +4,34 @@ import functools
 import operator
 import sys
 from dataclasses import dataclass, field
-from typing import Any, Callable, Iterator, Union
+from typing import Any, Callable, Iterator, Protocol, Union, final
 
 Number = Union[int, float, complex]
 SeqOrNumber = Union["Sequence", Number]
 
 
+class Computation(Protocol):
+    @property
+    def length(self) -> int: ...
+
+    def at(self, index: int) -> Any: ...
+
+
+@final
 @dataclass(frozen=True, slots=True, kw_only=True)
 class Sequence:
+    _computation: Computation
     _cached_at: Any = field(init=False, repr=False, compare=False, default=None)
 
     def __post_init__(self) -> None:
         object.__setattr__(
             self,
             "_cached_at",
-            functools.lru_cache(maxsize=100)(self._at),
+            functools.lru_cache(maxsize=100)(self._computation.at),
         )
 
-    def _at(self, index: int) -> Any:
-        raise NotImplementedError  # pragma: no cover
-
     def __len__(self) -> int:
-        return sys.maxsize
+        return self._computation.length
 
     def __bool__(self) -> bool:
         raise TypeError("Sequence has no boolean value")
@@ -93,72 +99,79 @@ class Sequence:
         return _binop(other, self, operator.pow)
 
     def __neg__(self) -> "Sequence":
-        return _UnaryOp(seq=self, op=operator.neg)
+        return _unop(self, operator.neg)
 
     def __pos__(self) -> "Sequence":
-        return _UnaryOp(seq=self, op=operator.pos)
+        return _unop(self, operator.pos)
 
     def __abs__(self) -> "Sequence":
-        return _UnaryOp(seq=self, op=operator.abs)
+        return _unop(self, operator.abs)
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class _Constant(Sequence):
+class _ConstantComputation:
     value: Any
 
-    def _at(self, index: int) -> Any:
+    @property
+    def length(self) -> int:
+        return sys.maxsize
+
+    def at(self, index: int) -> Any:
         return self.value
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class _Count(Sequence):
-    def _at(self, index: int) -> int:
+class _CountComputation:
+    @property
+    def length(self) -> int:
+        return sys.maxsize
+
+    def at(self, index: int) -> int:
         return index
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class _BinOp(Sequence):
+class _BinOpComputation:
     left: Sequence
     right: Sequence
     op: Callable[[Any, Any], Any]
 
-    def _at(self, index: int) -> Any:
-        return self.op(self.left[index], self.right[index])
-
-    def __len__(self) -> int:
+    @property
+    def length(self) -> int:
         return min(len(self.left), len(self.right))
+
+    def at(self, index: int) -> Any:
+        return self.op(self.left[index], self.right[index])
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class _UnaryOp(Sequence):
+class _UnaryOpComputation:
     seq: Sequence
     op: Callable[[Any], Any]
 
-    def _at(self, index: int) -> Any:
-        return self.op(self.seq[index])
-
-    def __len__(self) -> int:
+    @property
+    def length(self) -> int:
         return len(self.seq)
+
+    def at(self, index: int) -> Any:
+        return self.op(self.seq[index])
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class _SlicedSequence(Sequence):
+class _SlicedComputation:
     source: Sequence
     start: int
     step: int
     length: int
 
-    def _at(self, index: int) -> Any:
+    def at(self, index: int) -> Any:
         return self.source[self.start + self.step * index]
-
-    def __len__(self) -> int:
-        return self.length
 
 
 def _coerce(value: SeqOrNumber) -> Sequence:
     if isinstance(value, Sequence):
         return value
-    return _Constant(value=value)
+    return constant(value)
 
 
 def _binop(
@@ -166,7 +179,13 @@ def _binop(
     right: SeqOrNumber,
     op: Callable[[Any, Any], Any],
 ) -> Sequence:
-    return _BinOp(left=_coerce(left), right=_coerce(right), op=op)
+    return Sequence(
+        _computation=_BinOpComputation(left=_coerce(left), right=_coerce(right), op=op)
+    )
+
+
+def _unop(seq: Sequence, op: Callable[[Any], Any]) -> Sequence:
+    return Sequence(_computation=_UnaryOpComputation(seq=seq, op=op))
 
 
 def _slice_sequence(seq: Sequence, sl: slice) -> Sequence:
@@ -191,12 +210,16 @@ def _slice_sequence(seq: Sequence, sl: slice) -> Sequence:
         length = sys.maxsize
     else:
         length = (stop - start + step - 1) // step
-    return _SlicedSequence(source=seq, start=start, step=step, length=length)
+    return Sequence(
+        _computation=_SlicedComputation(
+            source=seq, start=start, step=step, length=length
+        )
+    )
 
 
 def constant(value: Number) -> Sequence:
-    return _Constant(value=value)
+    return Sequence(_computation=_ConstantComputation(value=value))
 
 
 def count() -> Sequence:
-    return _Count()
+    return Sequence(_computation=_CountComputation())
