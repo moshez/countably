@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import functools
+import itertools
 import operator
 import sys
 from dataclasses import dataclass
@@ -11,10 +12,11 @@ SeqOrNumber = Union["Sequence", Number]
 
 
 class Computation(Protocol):
-    @property
-    def length(self) -> int: ...
+    def __len__(self) -> int: ...
 
-    def at(self, index: int) -> Any: ...
+    def __getitem__(self, index: int) -> Any: ...
+
+    def __iter__(self) -> Iterator[Any]: ...
 
 
 @final
@@ -24,10 +26,10 @@ class Sequence:
 
     @functools.cached_property
     def _cached_at(self) -> Any:
-        return functools.lru_cache(maxsize=100)(self._computation.at)
+        return functools.lru_cache(maxsize=100)(self._computation.__getitem__)
 
     def __len__(self) -> int:
-        return self._computation.length
+        return len(self._computation)
 
     def __bool__(self) -> bool:
         raise TypeError("Sequence has no boolean value")
@@ -46,11 +48,7 @@ class Sequence:
         return self._cached_at(position)
 
     def __iter__(self) -> Iterator[Any]:
-        size = len(self)
-        position = 0
-        while position < size:
-            yield self[position]
-            position += 1
+        return iter(self._computation)
 
     def __add__(self, other: SeqOrNumber) -> "Sequence":
         return _binop(self, other, operator.add)
@@ -108,22 +106,26 @@ class Sequence:
 class _ConstantComputation:
     value: Any
 
-    @property
-    def length(self) -> int:
+    def __len__(self) -> int:
         return sys.maxsize
 
-    def at(self, index: int) -> Any:
+    def __getitem__(self, index: int) -> Any:
         return self.value
+
+    def __iter__(self) -> Iterator[Any]:
+        return itertools.repeat(self.value)
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class _CountComputation:
-    @property
-    def length(self) -> int:
+    def __len__(self) -> int:
         return sys.maxsize
 
-    def at(self, index: int) -> int:
+    def __getitem__(self, index: int) -> int:
         return index
+
+    def __iter__(self) -> Iterator[int]:
+        return iter(itertools.count())
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -132,12 +134,14 @@ class _BinOpComputation:
     right: Sequence
     op: Callable[[Any, Any], Any]
 
-    @property
-    def length(self) -> int:
+    def __len__(self) -> int:
         return min(len(self.left), len(self.right))
 
-    def at(self, index: int) -> Any:
+    def __getitem__(self, index: int) -> Any:
         return self.op(self.left[index], self.right[index])
+
+    def __iter__(self) -> Iterator[Any]:
+        return map(self.op, self.left, self.right)
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -145,12 +149,14 @@ class _UnaryOpComputation:
     seq: Sequence
     op: Callable[[Any], Any]
 
-    @property
-    def length(self) -> int:
+    def __len__(self) -> int:
         return len(self.seq)
 
-    def at(self, index: int) -> Any:
+    def __getitem__(self, index: int) -> Any:
         return self.op(self.seq[index])
+
+    def __iter__(self) -> Iterator[Any]:
+        return map(self.op, self.seq)
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -160,8 +166,17 @@ class _SlicedComputation:
     step: int
     length: int
 
-    def at(self, index: int) -> Any:
+    def __len__(self) -> int:
+        return self.length
+
+    def __getitem__(self, index: int) -> Any:
         return self.source[self.start + self.step * index]
+
+    def __iter__(self) -> Iterator[Any]:
+        stop = (
+            None if self.length == sys.maxsize else self.start + self.step * self.length
+        )
+        return itertools.islice(self.source, self.start, stop, self.step)
 
 
 def _coerce(value: SeqOrNumber) -> Sequence:

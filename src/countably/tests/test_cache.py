@@ -1,3 +1,4 @@
+import itertools
 import unittest
 
 from hamcrest import assert_that, equal_to, greater_than_or_equal_to
@@ -34,3 +35,9 @@ class TestLRUCache(unittest.TestCase):
             _ = seq[index]
         info = seq._cached_at.cache_info()
         assert_that(info.currsize, equal_to(100))
+
+    def test_iter_bypasses_cache(self) -> None:
+        seq = count() + 0
+        _ = list(itertools.islice(seq, 50))
+        info = seq._cached_at.cache_info()
+        assert_that(info.currsize, equal_to(0))

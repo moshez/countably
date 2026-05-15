@@ -109,6 +109,15 @@ class TestUnary(unittest.TestCase):
         seq = -count()[2:10]
         assert_that(len(seq), equal_to(8))
 
+    def test_neg_index(self) -> None:
+        seq = -count()
+        assert_that(seq[5], equal_to(-5))
+
+    def test_abs_index(self) -> None:
+        seq = abs(count() - 3)
+        assert_that(seq[0], equal_to(3))
+        assert_that(seq[5], equal_to(2))
+
 
 class TestLength(unittest.TestCase):
     def test_binop_infinite(self) -> None:
