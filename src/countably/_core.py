@@ -3,7 +3,7 @@ from __future__ import annotations
 import functools
 import operator
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Callable, Iterator, Protocol, Union, final
 
 Number = Union[int, float, complex]
@@ -18,17 +18,13 @@ class Computation(Protocol):
 
 
 @final
-@dataclass(frozen=True, slots=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True)
 class Sequence:
     _computation: Computation
-    _cached_at: Any = field(init=False, repr=False, compare=False, default=None)
 
-    def __post_init__(self) -> None:
-        object.__setattr__(
-            self,
-            "_cached_at",
-            functools.lru_cache(maxsize=100)(self._computation.at),
-        )
+    @functools.cached_property
+    def _cached_at(self) -> Any:
+        return functools.lru_cache(maxsize=100)(self._computation.at)
 
     def __len__(self) -> int:
         return self._computation.length
