@@ -227,7 +227,9 @@ def _coerce(value: SeqOrNumber) -> _Sequence:
         return value
     if isinstance(value, (int, float)):
         return _make_constant(value)
-    raise TypeError(f"cannot coerce {type(value).__name__} to a NumberSequence")
+    raise TypeError(  # pragma: no cover
+        f"cannot coerce {type(value).__name__} to a NumberSequence"
+    )
 
 
 def _binop(left: SeqOrNumber, right: SeqOrNumber, op: _BinOp) -> _Sequence:

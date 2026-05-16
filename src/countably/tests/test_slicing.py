@@ -1,10 +1,9 @@
 import itertools
-import operator
 import sys
 import unittest
 from typing import Iterable
 
-from hamcrest import assert_that, calling, equal_to, raises
+from hamcrest import assert_that, equal_to, raises
 
 from countably import NumberSequence, constant, count
 
@@ -102,28 +101,16 @@ class TestArithmeticBetweenSlices(unittest.TestCase):
 
 class TestSliceErrors(unittest.TestCase):
     def test_zero_step_raises(self) -> None:
-        assert_that(
-            calling(operator.getitem).with_args(count(), slice(0, 10, 0)),
-            raises(ValueError),
-        )
+        assert_that(lambda: count()[slice(0, 10, 0)], raises(ValueError))
 
     def test_negative_step_raises(self) -> None:
-        assert_that(
-            calling(operator.getitem).with_args(count(), slice(None, None, -1)),
-            raises(ValueError),
-        )
+        assert_that(lambda: count()[slice(None, None, -1)], raises(ValueError))
 
     def test_negative_start_raises(self) -> None:
-        assert_that(
-            calling(operator.getitem).with_args(count(), slice(-1, None, None)),
-            raises(ValueError),
-        )
+        assert_that(lambda: count()[slice(-1, None, None)], raises(ValueError))
 
     def test_negative_stop_raises(self) -> None:
-        assert_that(
-            calling(operator.getitem).with_args(count(), slice(0, -1, None)),
-            raises(ValueError),
-        )
+        assert_that(lambda: count()[slice(0, -1, None)], raises(ValueError))
 
 
 class TestSliceOfConstant(unittest.TestCase):

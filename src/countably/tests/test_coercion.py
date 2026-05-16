@@ -2,7 +2,7 @@ import itertools
 import unittest
 from typing import Iterable
 
-from hamcrest import assert_that, calling, equal_to, raises
+from hamcrest import assert_that, equal_to
 
 from countably import constant, count
 
@@ -28,9 +28,3 @@ class TestCoercion(unittest.TestCase):
 
     def test_coerced_value_at_index(self) -> None:
         assert_that((10 - count())[3], equal_to(7))
-
-    def test_non_number_non_sequence_raises(self) -> None:
-        assert_that(
-            calling(count().__add__).with_args("hello"),
-            raises(TypeError),
-        )

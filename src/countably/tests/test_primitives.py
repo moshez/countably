@@ -1,9 +1,8 @@
 import itertools
-import operator
 import sys
 import unittest
 
-from hamcrest import assert_that, calling, equal_to, raises
+from hamcrest import assert_that, equal_to, raises
 
 from countably import NumberSequence, constant, count
 
@@ -59,34 +58,27 @@ class TestCount(unittest.TestCase):
 
 class TestBoolFails(unittest.TestCase):
     def test_bool_constant_raises(self) -> None:
-        assert_that(calling(bool).with_args(constant(7)), raises(TypeError))
+        assert_that(lambda: bool(constant(7)), raises(TypeError))
 
     def test_bool_count_raises(self) -> None:
-        assert_that(calling(bool).with_args(count()), raises(TypeError))
+        assert_that(lambda: bool(count()), raises(TypeError))
 
     def test_bool_expression_raises(self) -> None:
-        assert_that(calling(bool).with_args(3 + count()), raises(TypeError))
+        assert_that(lambda: bool(3 + count()), raises(TypeError))
 
 
 class TestIndexBounds(unittest.TestCase):
     def test_negative_index_on_infinite_raises(self) -> None:
-        assert_that(
-            calling(operator.getitem).with_args(count(), -1),
-            raises(IndexError),
-        )
+        assert_that(lambda: count()[-1], raises(IndexError))
 
     def test_out_of_range_finite_raises(self) -> None:
-        assert_that(
-            calling(operator.getitem).with_args(count()[0:3], 3),
-            raises(IndexError),
-        )
+        seq = _seq(count()[0:3])
+        assert_that(lambda: seq[3], raises(IndexError))
 
     def test_finite_negative_index_works(self) -> None:
         seq = _seq(count()[2:10])
         assert_that(seq[-1], equal_to(9))
 
     def test_finite_negative_out_of_range_raises(self) -> None:
-        assert_that(
-            calling(operator.getitem).with_args(count()[2:5], -4),
-            raises(IndexError),
-        )
+        seq = _seq(count()[2:5])
+        assert_that(lambda: seq[-4], raises(IndexError))

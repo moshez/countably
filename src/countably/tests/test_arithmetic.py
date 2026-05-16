@@ -3,7 +3,7 @@ import sys
 import unittest
 from typing import Iterable
 
-from hamcrest import assert_that, calling, equal_to, raises
+from hamcrest import assert_that, equal_to, raises
 
 from countably import NumberSequence, constant, count
 
@@ -145,7 +145,7 @@ class TestImmutability(unittest.TestCase):
 
         seq = constant(7)
         assert_that(
-            calling(setattr).with_args(seq, "_computation", None),
+            lambda: setattr(seq, "_computation", None),
             raises(FrozenInstanceError),
         )
 
