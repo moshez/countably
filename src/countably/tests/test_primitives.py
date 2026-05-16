@@ -1,4 +1,5 @@
 import itertools
+import operator
 import sys
 import unittest
 
@@ -64,16 +65,14 @@ class TestBoolFails(unittest.TestCase):
 
 class TestIndexBounds(unittest.TestCase):
     def test_negative_index_on_infinite_raises(self) -> None:
-        seq = count()
         assert_that(
-            calling(seq.__getitem__).with_args(-1),
+            calling(operator.getitem).with_args(count(), -1),
             raises(IndexError),
         )
 
     def test_out_of_range_finite_raises(self) -> None:
-        seq = count()[0:3]
         assert_that(
-            calling(seq.__getitem__).with_args(3),
+            calling(operator.getitem).with_args(count()[0:3], 3),
             raises(IndexError),
         )
 
@@ -82,8 +81,7 @@ class TestIndexBounds(unittest.TestCase):
         assert_that(seq[-1], equal_to(9))
 
     def test_finite_negative_out_of_range_raises(self) -> None:
-        seq = count()[2:5]
         assert_that(
-            calling(seq.__getitem__).with_args(-4),
+            calling(operator.getitem).with_args(count()[2:5], -4),
             raises(IndexError),
         )

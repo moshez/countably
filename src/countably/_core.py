@@ -6,7 +6,6 @@ import operator
 import sys
 from dataclasses import dataclass
 from typing import (
-    Any,
     Callable,
     Generic,
     Iterator,
@@ -17,11 +16,11 @@ from typing import (
     overload,
 )
 
-Number = Union[int, float, complex]
-SeqOrNumber = Union["Sequence[Any]", Number]
+Number = complex
+SeqOrNumber = Union["Sequence[Number]", Number]
 
-T_co = TypeVar("T_co", covariant=True)
-T = TypeVar("T", int, float, complex)
+T_co = TypeVar("T_co", covariant=True, bound=Number)
+T = TypeVar("T", bound=Number)
 
 
 class Computation(Protocol[T_co]):
@@ -38,7 +37,7 @@ class Sequence(Generic[T_co]):
     _computation: Computation[T_co]
 
     @functools.cached_property
-    def _cached_at(self) -> Any:
+    def _cached_at(self) -> Callable[[int], T_co]:
         return functools.lru_cache(maxsize=100)(self._computation.__getitem__)
 
     def __len__(self) -> int:
@@ -215,7 +214,7 @@ def _binop(
 
 
 def _unop(
-    seq: Sequence[Any],
+    seq: Sequence[Number],
     op: Callable[[Number], Number],
 ) -> Sequence[Number]:
     return Sequence(_computation=_UnaryOpComputation(seq=seq, op=op))

@@ -1,4 +1,5 @@
 import itertools
+import operator
 import sys
 import unittest
 
@@ -95,30 +96,26 @@ class TestArithmeticBetweenSlices(unittest.TestCase):
 
 class TestSliceErrors(unittest.TestCase):
     def test_zero_step_raises(self) -> None:
-        seq = count()
         assert_that(
-            calling(seq.__getitem__).with_args(slice(0, 10, 0)),
+            calling(operator.getitem).with_args(count(), slice(0, 10, 0)),
             raises(ValueError),
         )
 
     def test_negative_step_raises(self) -> None:
-        seq = count()
         assert_that(
-            calling(seq.__getitem__).with_args(slice(None, None, -1)),
+            calling(operator.getitem).with_args(count(), slice(None, None, -1)),
             raises(ValueError),
         )
 
     def test_negative_start_raises(self) -> None:
-        seq = count()
         assert_that(
-            calling(seq.__getitem__).with_args(slice(-1, None, None)),
+            calling(operator.getitem).with_args(count(), slice(-1, None, None)),
             raises(ValueError),
         )
 
     def test_negative_stop_raises(self) -> None:
-        seq = count()
         assert_that(
-            calling(seq.__getitem__).with_args(slice(0, -1, None)),
+            calling(operator.getitem).with_args(count(), slice(0, -1, None)),
             raises(ValueError),
         )
 
