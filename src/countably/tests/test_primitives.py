@@ -2,10 +2,15 @@ import itertools
 import operator
 import sys
 import unittest
+from typing import cast
 
 from hamcrest import assert_that, calling, equal_to, raises
 
 from countably import NumberSequence, constant, count
+
+
+def _seq(value) -> NumberSequence:
+    return cast(NumberSequence, value)
 
 
 class TestConstant(unittest.TestCase):
@@ -77,7 +82,7 @@ class TestIndexBounds(unittest.TestCase):
         )
 
     def test_finite_negative_index_works(self) -> None:
-        seq = count()[2:10]
+        seq = _seq(count()[2:10])
         assert_that(seq[-1], equal_to(9))
 
     def test_finite_negative_out_of_range_raises(self) -> None:

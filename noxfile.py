@@ -51,6 +51,7 @@ def lint(session):
     session.run("black", "--check", "--diff", *files)
     black_compat = ["--max-line-length=88", "--ignore=E203,E503,E704"]
     session.run("flake8", *black_compat, "src/")
+    session.run("python", "scripts/stolid_check.py", "src/")
 
 
 @nox.session(python=VERSIONS[-1])

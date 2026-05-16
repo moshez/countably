@@ -1,14 +1,19 @@
 import itertools
 import sys
 import unittest
+from typing import cast
 
 from hamcrest import assert_that, calling, equal_to, raises
 
-from countably import constant, count
+from countably import NumberSequence, constant, count
 
 
 def _take(seq, n):
     return list(itertools.islice(seq, n))
+
+
+def _seq(value) -> NumberSequence:
+    return cast(NumberSequence, value)
 
 
 class TestAdd(unittest.TestCase):
@@ -106,7 +111,7 @@ class TestUnary(unittest.TestCase):
         assert_that(_take(seq, 5), equal_to([2, 1, 0, 1, 2]))
 
     def test_unary_length_preserved(self) -> None:
-        seq = -count()[2:10]
+        seq = -_seq(count()[2:10])
         assert_that(len(seq), equal_to(8))
 
     def test_neg_index(self) -> None:
@@ -125,11 +130,11 @@ class TestLength(unittest.TestCase):
         assert_that(len(seq), equal_to(sys.maxsize))
 
     def test_binop_finite_takes_shorter(self) -> None:
-        seq = count()[0:5] + count()[0:3]
+        seq = _seq(count()[0:5]) + _seq(count()[0:3])
         assert_that(len(seq), equal_to(3))
 
     def test_binop_finite_with_infinite(self) -> None:
-        seq = count()[0:5] + count()
+        seq = _seq(count()[0:5]) + count()
         assert_that(len(seq), equal_to(5))
 
 
