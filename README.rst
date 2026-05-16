@@ -1,6 +1,18 @@
 countably
 =========
 
+.. image:: https://img.shields.io/pypi/v/countably.svg
+   :target: https://pypi.org/project/countably/
+   :alt: PyPI version
+
+.. image:: https://img.shields.io/pypi/pyversions/countably.svg
+   :target: https://pypi.org/project/countably/
+   :alt: Supported Python versions
+
+.. image:: https://readthedocs.org/projects/countably/badge/?version=latest
+   :target: https://countably.readthedocs.io/en/latest/
+   :alt: Documentation Status
+
 Lazy, immutable, infinite numeric sequences for Python.
 
 ``countably`` lets you describe sequences declaratively, the way you'd
