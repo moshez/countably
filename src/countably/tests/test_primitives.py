@@ -6,10 +6,7 @@ from hamcrest import assert_that, equal_to, raises
 
 from countably import NumberSequence, constant, count
 
-
-def _seq(value: object) -> NumberSequence:
-    assert isinstance(value, NumberSequence)
-    return value
+from ._seq import as_seq as _seq
 
 
 class TestConstant(unittest.TestCase):
@@ -65,6 +62,20 @@ class TestBoolFails(unittest.TestCase):
 
     def test_bool_expression_raises(self) -> None:
         assert_that(lambda: bool(3 + count()), raises(TypeError))
+
+
+class TestStr(unittest.TestCase):
+    def test_infinite_count(self) -> None:
+        assert_that(str(count()), equal_to("[0, 1, 2, 3, 4, ....]"))
+
+    def test_infinite_constant(self) -> None:
+        assert_that(str(constant(7)), equal_to("[7, 7, 7, 7, 7, ....]"))
+
+    def test_finite_slice(self) -> None:
+        assert_that(str(_seq(count()[2:5])), equal_to("[2, 3, 4]"))
+
+    def test_empty_finite(self) -> None:
+        assert_that(str(_seq(count()[5:3])), equal_to("[]"))
 
 
 class TestIndexBounds(unittest.TestCase):

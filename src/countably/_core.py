@@ -44,6 +44,12 @@ class _Sequence:
     def __bool__(self) -> bool:
         raise TypeError("NumberSequence has no boolean value")
 
+    def __str__(self) -> str:
+        if len(self) == sys.maxsize:
+            head = ", ".join(str(v) for v in itertools.islice(self, 5))
+            return f"[{head}, ....]"
+        return str(list(self))
+
     def __getitem__(self, index: Union[int, SliceArg]) -> Union[Number, "_Sequence"]:
         if isinstance(index, slice):
             return _slice_sequence(self, index)

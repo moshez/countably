@@ -1,20 +1,11 @@
-import itertools
 import sys
 import unittest
-from typing import Iterable
 
 from hamcrest import assert_that, equal_to, raises
 
-from countably import NumberSequence, constant, count
+from countably import constant, count
 
-
-def _take(seq: Iterable[float], n: int) -> list[float]:
-    return list(itertools.islice(seq, n))
-
-
-def _seq(value: object) -> NumberSequence:
-    assert isinstance(value, NumberSequence)
-    return value
+from ._seq import as_seq as _seq, take as _take
 
 
 class TestInfiniteSlice(unittest.TestCase):

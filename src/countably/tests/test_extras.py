@@ -1,15 +1,11 @@
-import itertools
 import math
 import unittest
-from typing import Iterable
 
 from hamcrest import assert_that, equal_to
 
 from countably import constant, count, maximum, minimum
 
-
-def _take(seq: Iterable[float], n: int) -> list[float]:
-    return list(itertools.islice(seq, n))
+from ._seq import take as _take
 
 
 class TestComparison(unittest.TestCase):
