@@ -5,7 +5,7 @@ import unittest
 
 from hamcrest import assert_that, calling, equal_to, raises
 
-from countably import Sequence, constant, count
+from countably import NumberSequence, constant, count
 
 
 class TestConstant(unittest.TestCase):
@@ -18,7 +18,7 @@ class TestConstant(unittest.TestCase):
         assert_that(seq[10_000], equal_to(7))
 
     def test_is_sequence(self) -> None:
-        assert_that(isinstance(constant(7), Sequence), equal_to(True))
+        assert_that(isinstance(constant(7), NumberSequence), equal_to(True))
 
     def test_length_is_maxsize(self) -> None:
         assert_that(len(constant(7)), equal_to(sys.maxsize))
@@ -42,7 +42,7 @@ class TestCount(unittest.TestCase):
         assert_that(len(count()), equal_to(sys.maxsize))
 
     def test_is_sequence(self) -> None:
-        assert_that(isinstance(count(), Sequence), equal_to(True))
+        assert_that(isinstance(count(), NumberSequence), equal_to(True))
 
     def test_equality(self) -> None:
         assert_that(count(), equal_to(count()))

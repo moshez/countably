@@ -12,18 +12,18 @@ from typing import (
     Protocol,
     TypeVar,
     Union,
-    final,
     overload,
+    runtime_checkable,
 )
 
 Number = complex
-SeqOrNumber = Union["Sequence[Number]", Number]
+SeqOrNumber = Union["NumberSequence[Number]", Number]
 
 T_co = TypeVar("T_co", covariant=True, bound=Number)
 T = TypeVar("T", bound=Number)
 
 
-class Computation(Protocol[T_co]):
+class _Computation(Protocol[T_co]):
     def __len__(self) -> int: ...
 
     def __getitem__(self, index: int) -> T_co: ...
@@ -31,10 +31,58 @@ class Computation(Protocol[T_co]):
     def __iter__(self) -> Iterator[T_co]: ...
 
 
-@final
+@runtime_checkable
+class NumberSequence(Protocol[T_co]):
+    def __len__(self) -> int: ...
+
+    def __bool__(self) -> bool: ...
+
+    @overload
+    def __getitem__(self, index: int) -> T_co: ...
+
+    @overload
+    def __getitem__(self, index: slice) -> "NumberSequence[T_co]": ...
+
+    def __iter__(self) -> Iterator[T_co]: ...
+
+    def __add__(self, other: SeqOrNumber) -> "NumberSequence[Number]": ...
+
+    def __radd__(self, other: SeqOrNumber) -> "NumberSequence[Number]": ...
+
+    def __sub__(self, other: SeqOrNumber) -> "NumberSequence[Number]": ...
+
+    def __rsub__(self, other: SeqOrNumber) -> "NumberSequence[Number]": ...
+
+    def __mul__(self, other: SeqOrNumber) -> "NumberSequence[Number]": ...
+
+    def __rmul__(self, other: SeqOrNumber) -> "NumberSequence[Number]": ...
+
+    def __truediv__(self, other: SeqOrNumber) -> "NumberSequence[Number]": ...
+
+    def __rtruediv__(self, other: SeqOrNumber) -> "NumberSequence[Number]": ...
+
+    def __floordiv__(self, other: SeqOrNumber) -> "NumberSequence[Number]": ...
+
+    def __rfloordiv__(self, other: SeqOrNumber) -> "NumberSequence[Number]": ...
+
+    def __mod__(self, other: SeqOrNumber) -> "NumberSequence[Number]": ...
+
+    def __rmod__(self, other: SeqOrNumber) -> "NumberSequence[Number]": ...
+
+    def __pow__(self, other: SeqOrNumber) -> "NumberSequence[Number]": ...
+
+    def __rpow__(self, other: SeqOrNumber) -> "NumberSequence[Number]": ...
+
+    def __neg__(self) -> "NumberSequence[Number]": ...
+
+    def __pos__(self) -> "NumberSequence[Number]": ...
+
+    def __abs__(self) -> "NumberSequence[Number]": ...
+
+
 @dataclass(frozen=True, kw_only=True)
-class Sequence(Generic[T_co]):
-    _computation: Computation[T_co]
+class _Sequence(Generic[T_co]):
+    _computation: _Computation[T_co]
 
     @functools.cached_property
     def _cached_at(self) -> Callable[[int], T_co]:
@@ -44,15 +92,15 @@ class Sequence(Generic[T_co]):
         return len(self._computation)
 
     def __bool__(self) -> bool:
-        raise TypeError("Sequence has no boolean value")
+        raise TypeError("NumberSequence has no boolean value")
 
     @overload
     def __getitem__(self, index: int) -> T_co: ...
 
     @overload
-    def __getitem__(self, index: slice) -> "Sequence[T_co]": ...
+    def __getitem__(self, index: slice) -> "_Sequence[T_co]": ...
 
-    def __getitem__(self, index: Union[int, slice]) -> Union[T_co, "Sequence[T_co]"]:
+    def __getitem__(self, index: Union[int, slice]) -> Union[T_co, "_Sequence[T_co]"]:
         if isinstance(index, slice):
             return _slice_sequence(self, index)
         size = len(self)
@@ -68,55 +116,55 @@ class Sequence(Generic[T_co]):
     def __iter__(self) -> Iterator[T_co]:
         return iter(self._computation)
 
-    def __add__(self, other: SeqOrNumber) -> "Sequence[Number]":
+    def __add__(self, other: SeqOrNumber) -> NumberSequence[Number]:
         return _binop(self, other, operator.add)
 
-    def __radd__(self, other: SeqOrNumber) -> "Sequence[Number]":
+    def __radd__(self, other: SeqOrNumber) -> NumberSequence[Number]:
         return _binop(other, self, operator.add)
 
-    def __sub__(self, other: SeqOrNumber) -> "Sequence[Number]":
+    def __sub__(self, other: SeqOrNumber) -> NumberSequence[Number]:
         return _binop(self, other, operator.sub)
 
-    def __rsub__(self, other: SeqOrNumber) -> "Sequence[Number]":
+    def __rsub__(self, other: SeqOrNumber) -> NumberSequence[Number]:
         return _binop(other, self, operator.sub)
 
-    def __mul__(self, other: SeqOrNumber) -> "Sequence[Number]":
+    def __mul__(self, other: SeqOrNumber) -> NumberSequence[Number]:
         return _binop(self, other, operator.mul)
 
-    def __rmul__(self, other: SeqOrNumber) -> "Sequence[Number]":
+    def __rmul__(self, other: SeqOrNumber) -> NumberSequence[Number]:
         return _binop(other, self, operator.mul)
 
-    def __truediv__(self, other: SeqOrNumber) -> "Sequence[Number]":
+    def __truediv__(self, other: SeqOrNumber) -> NumberSequence[Number]:
         return _binop(self, other, operator.truediv)
 
-    def __rtruediv__(self, other: SeqOrNumber) -> "Sequence[Number]":
+    def __rtruediv__(self, other: SeqOrNumber) -> NumberSequence[Number]:
         return _binop(other, self, operator.truediv)
 
-    def __floordiv__(self, other: SeqOrNumber) -> "Sequence[Number]":
+    def __floordiv__(self, other: SeqOrNumber) -> NumberSequence[Number]:
         return _binop(self, other, operator.floordiv)
 
-    def __rfloordiv__(self, other: SeqOrNumber) -> "Sequence[Number]":
+    def __rfloordiv__(self, other: SeqOrNumber) -> NumberSequence[Number]:
         return _binop(other, self, operator.floordiv)
 
-    def __mod__(self, other: SeqOrNumber) -> "Sequence[Number]":
+    def __mod__(self, other: SeqOrNumber) -> NumberSequence[Number]:
         return _binop(self, other, operator.mod)
 
-    def __rmod__(self, other: SeqOrNumber) -> "Sequence[Number]":
+    def __rmod__(self, other: SeqOrNumber) -> NumberSequence[Number]:
         return _binop(other, self, operator.mod)
 
-    def __pow__(self, other: SeqOrNumber) -> "Sequence[Number]":
+    def __pow__(self, other: SeqOrNumber) -> NumberSequence[Number]:
         return _binop(self, other, operator.pow)
 
-    def __rpow__(self, other: SeqOrNumber) -> "Sequence[Number]":
+    def __rpow__(self, other: SeqOrNumber) -> NumberSequence[Number]:
         return _binop(other, self, operator.pow)
 
-    def __neg__(self) -> "Sequence[Number]":
+    def __neg__(self) -> NumberSequence[Number]:
         return _unop(self, operator.neg)
 
-    def __pos__(self) -> "Sequence[Number]":
+    def __pos__(self) -> NumberSequence[Number]:
         return _unop(self, operator.pos)
 
-    def __abs__(self) -> "Sequence[Number]":
+    def __abs__(self) -> NumberSequence[Number]:
         return _unop(self, operator.abs)
 
 
@@ -148,8 +196,8 @@ class _CountComputation:
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class _BinOpComputation:
-    left: Sequence[Number]
-    right: Sequence[Number]
+    left: NumberSequence[Number]
+    right: NumberSequence[Number]
     op: Callable[[Number, Number], Number]
 
     def __len__(self) -> int:
@@ -164,7 +212,7 @@ class _BinOpComputation:
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class _UnaryOpComputation:
-    seq: Sequence[Number]
+    seq: NumberSequence[Number]
     op: Callable[[Number], Number]
 
     def __len__(self) -> int:
@@ -179,7 +227,7 @@ class _UnaryOpComputation:
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class _SlicedComputation(Generic[T_co]):
-    source: Sequence[T_co]
+    source: NumberSequence[T_co]
     start: int
     step: int
     length: int
@@ -197,8 +245,8 @@ class _SlicedComputation(Generic[T_co]):
         return itertools.islice(self.source, self.start, stop, self.step)
 
 
-def _coerce(value: SeqOrNumber) -> Sequence[Number]:
-    if isinstance(value, Sequence):
+def _coerce(value: SeqOrNumber) -> NumberSequence[Number]:
+    if isinstance(value, NumberSequence):
         return value
     return constant(value)
 
@@ -207,20 +255,20 @@ def _binop(
     left: SeqOrNumber,
     right: SeqOrNumber,
     op: Callable[[Number, Number], Number],
-) -> Sequence[Number]:
-    return Sequence(
+) -> NumberSequence[Number]:
+    return _Sequence(
         _computation=_BinOpComputation(left=_coerce(left), right=_coerce(right), op=op)
     )
 
 
 def _unop(
-    seq: Sequence[Number],
+    seq: NumberSequence[Number],
     op: Callable[[Number], Number],
-) -> Sequence[Number]:
-    return Sequence(_computation=_UnaryOpComputation(seq=seq, op=op))
+) -> NumberSequence[Number]:
+    return _Sequence(_computation=_UnaryOpComputation(seq=seq, op=op))
 
 
-def _slice_sequence(seq: Sequence[T_co], sl: slice) -> Sequence[T_co]:
+def _slice_sequence(seq: NumberSequence[T_co], sl: slice) -> _Sequence[T_co]:
     step = 1 if sl.step is None else sl.step
     start = 0 if sl.start is None else sl.start
     if step <= 0 or start < 0 or (sl.stop is not None and sl.stop < 0):
@@ -231,16 +279,16 @@ def _slice_sequence(seq: Sequence[T_co], sl: slice) -> Sequence[T_co]:
     else:
         actual_stop = source_len if sl.stop is None else min(sl.stop, source_len)
         length = max(0, (actual_stop - start + step - 1) // step)
-    return Sequence(
+    return _Sequence(
         _computation=_SlicedComputation(
             source=seq, start=start, step=step, length=length
         )
     )
 
 
-def constant(value: T) -> Sequence[T]:
-    return Sequence(_computation=_ConstantComputation(value=value))
+def constant(value: T) -> NumberSequence[T]:
+    return _Sequence(_computation=_ConstantComputation(value=value))
 
 
-def count() -> Sequence[int]:
-    return Sequence(_computation=_CountComputation())
+def count() -> NumberSequence[int]:
+    return _Sequence(_computation=_CountComputation())
