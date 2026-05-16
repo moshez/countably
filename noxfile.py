@@ -6,7 +6,7 @@ import nox
 nox.options.envdir = "build/nox"
 nox.options.sessions = ["lint", "tests", "mypy", "docs", "build"]
 
-VERSIONS = ["3.11", "3.12"]
+VERSIONS = ["3.12", "3.13", "3.14"]
 
 
 @nox.session(python=VERSIONS)
@@ -49,18 +49,20 @@ def lint(session):
     session.install("-r", "requirements-lint.txt")
     session.install("-e", ".")
     session.run("black", "--check", "--diff", *files)
-    black_compat = ["--max-line-length=88", "--ignore=E203,E503"]
+    black_compat = ["--max-line-length=88", "--ignore=E203,E503,E704"]
     session.run("flake8", *black_compat, "src/")
 
 
 @nox.session(python=VERSIONS[-1])
 def mypy(session):
+    session.install("-r", "requirements-tests.txt")
     session.install("-r", "requirements-mypy.txt")
     session.install("-e", ".")
     session.run(
         "mypy",
-        "--warn-unused-ignores",
-        "--ignore-missing-imports",
+        "--strict",
+        "--disallow-any-explicit",
+        "--disallow-any-generics",
         "src/",
     )
 
