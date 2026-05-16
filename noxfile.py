@@ -60,7 +60,9 @@ def mypy(session):
     session.install("-e", ".")
     session.run(
         "mypy",
-        "--warn-unused-ignores",
+        "--strict",
+        "--disallow-any-explicit",
+        "--disallow-any-generics",
         "--ignore-missing-imports",
         "src/",
     )

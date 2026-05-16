@@ -1,12 +1,13 @@
 import itertools
 import unittest
+from typing import Iterable
 
 from hamcrest import assert_that, calling, equal_to, raises
 
 from countably import constant, count
 
 
-def _take(seq, n):
+def _take(seq: Iterable[float], n: int) -> list[float]:
     return list(itertools.islice(seq, n))
 
 

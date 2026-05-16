@@ -1,16 +1,22 @@
 from __future__ import annotations
 
 from typing import (
+    TYPE_CHECKING,
     Iterator,
     Optional,
     Protocol,
     Self,
+    TypeAlias,
     Union,
     runtime_checkable,
 )
 
 Number = float
 SeqOrNumber = Union["NumberSequence", Number]
+if TYPE_CHECKING:
+    SliceArg: TypeAlias = slice[Optional[int], Optional[int], Optional[int]]
+else:
+    SliceArg = slice
 
 
 class _Computation(Protocol):
@@ -44,7 +50,7 @@ class NumberSequence(Protocol):
 
     def __bool__(self) -> bool: ...
 
-    def __getitem__(self, index: Union[int, slice]) -> Union[Number, Self]: ...
+    def __getitem__(self, index: Union[int, SliceArg]) -> Union[Number, Self]: ...
 
     def __iter__(self) -> Iterator[Number]: ...
 

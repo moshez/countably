@@ -8,7 +8,7 @@ import sys
 from dataclasses import dataclass, field
 from typing import Callable, Iterator, Optional, Union
 
-from ._protocols import NumberSequence, Number, SeqOrNumber, _Computation
+from ._protocols import NumberSequence, Number, SeqOrNumber, SliceArg, _Computation
 
 _BinOp = Callable[[Number, Number], Number]
 _UnaryOp = Callable[[Number], Number]
@@ -44,7 +44,7 @@ class _Sequence:
     def __bool__(self) -> bool:
         raise TypeError("NumberSequence has no boolean value")
 
-    def __getitem__(self, index: Union[int, slice]) -> Union[Number, "_Sequence"]:
+    def __getitem__(self, index: Union[int, SliceArg]) -> Union[Number, "_Sequence"]:
         if isinstance(index, slice):
             return _slice_sequence(self, index)
         size = len(self)
@@ -240,7 +240,7 @@ def _unop(seq: _Sequence, op: _UnaryOp) -> _Sequence:
     return _Sequence.for_computation(_UnaryOpComputation(seq=seq, op=op))
 
 
-def _slice_sequence(seq: _Sequence, sl: slice) -> _Sequence:
+def _slice_sequence(seq: _Sequence, sl: SliceArg) -> _Sequence:
     step = 1 if sl.step is None else sl.step
     start = 0 if sl.start is None else sl.start
     if step <= 0 or start < 0 or (sl.stop is not None and sl.stop < 0):

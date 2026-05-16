@@ -7,7 +7,8 @@ helpers :func:`maximum` / :func:`minimum`.
 
 import importlib.metadata
 
-from ._core import NumberSequence, constant, count, maximum, minimum
+from ._core import constant, count, maximum, minimum
+from ._protocols import NumberSequence
 
 __version__ = importlib.metadata.version(__name__)
 

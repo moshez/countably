@@ -2,15 +2,15 @@ import itertools
 import operator
 import sys
 import unittest
-from typing import cast
 
 from hamcrest import assert_that, calling, equal_to, raises
 
 from countably import NumberSequence, constant, count
 
 
-def _seq(value) -> NumberSequence:
-    return cast(NumberSequence, value)
+def _seq(value: object) -> NumberSequence:
+    assert isinstance(value, NumberSequence)
+    return value
 
 
 class TestConstant(unittest.TestCase):

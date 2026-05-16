@@ -1,19 +1,20 @@
 import itertools
 import sys
 import unittest
-from typing import cast
+from typing import Iterable
 
 from hamcrest import assert_that, calling, equal_to, raises
 
 from countably import NumberSequence, constant, count
 
 
-def _take(seq, n):
+def _take(seq: Iterable[float], n: int) -> list[float]:
     return list(itertools.islice(seq, n))
 
 
-def _seq(value) -> NumberSequence:
-    return cast(NumberSequence, value)
+def _seq(value: object) -> NumberSequence:
+    assert isinstance(value, NumberSequence)
+    return value
 
 
 class TestAdd(unittest.TestCase):
