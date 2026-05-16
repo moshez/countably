@@ -24,9 +24,6 @@ class TestConstant(unittest.TestCase):
     def test_length_is_maxsize(self) -> None:
         assert_that(len(constant(7)), equal_to(sys.maxsize))
 
-    def test_equality(self) -> None:
-        assert_that(constant(7), equal_to(constant(7)))
-
     def test_iter(self) -> None:
         values = list(itertools.islice(constant(7), 4))
         assert_that(values, equal_to([7, 7, 7, 7]))
@@ -44,9 +41,6 @@ class TestCount(unittest.TestCase):
 
     def test_is_sequence(self) -> None:
         assert_that(isinstance(count(), NumberSequence), equal_to(True))
-
-    def test_equality(self) -> None:
-        assert_that(count(), equal_to(count()))
 
     def test_iter(self) -> None:
         values = list(itertools.islice(count(), 5))

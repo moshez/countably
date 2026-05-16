@@ -140,11 +140,14 @@ class TestImmutability(unittest.TestCase):
             raises(FrozenInstanceError),
         )
 
-    def test_equality_of_expressions(self) -> None:
+    def test_elementwise_equality(self) -> None:
         first = 3 + count()
         second = 3 + count()
-        assert_that(first, equal_to(second))
+        assert_that(_take(first == second, 10), equal_to([True] * 10))
 
-    def test_hashable(self) -> None:
-        seq = 3 + count()
-        assert_that(hash(seq), equal_to(hash(3 + count())))
+    def test_elementwise_inequality(self) -> None:
+        seq = count() != 2
+        assert_that(_take(seq, 5), equal_to([True, True, False, True, True]))
+
+    def test_not_hashable(self) -> None:
+        assert_that(lambda: hash(constant(7)), raises(TypeError))

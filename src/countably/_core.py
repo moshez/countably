@@ -5,13 +5,14 @@ import itertools
 import math
 import operator
 import sys
-from dataclasses import dataclass, field
-from typing import Callable, Iterator, Optional, Union
+from dataclasses import dataclass
+from typing import Callable, Iterator, Optional, Self, TypeVar, Union
 
 from ._protocols import NumberSequence, Number, SeqOrNumber, SliceArg, _Computation
 
 _BinOp = Callable[[Number, Number], Number]
 _UnaryOp = Callable[[Number], Number]
+_S = TypeVar("_S", bound="_Sequence")
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -26,13 +27,15 @@ class _Cache:
         return self.fn(index)
 
 
-@dataclass(frozen=True, slots=True, kw_only=True)
+@dataclass(frozen=True, slots=True, kw_only=True, eq=False)
 class _Sequence:
     _computation: _Computation
-    _cache: _Cache = field(compare=False)
+    _cache: _Cache
+
+    __hash__ = None  # type: ignore[assignment]
 
     @classmethod
-    def for_computation(cls, computation: _Computation) -> "_Sequence":
+    def for_computation(cls, computation: _Computation) -> Self:
         return cls(
             _computation=computation,
             _cache=_Cache.for_computation(computation),
@@ -50,7 +53,7 @@ class _Sequence:
             return f"[{head}, ....]"
         return str(list(self))
 
-    def __getitem__(self, index: Union[int, SliceArg]) -> Union[Number, "_Sequence"]:
+    def __getitem__(self, index: Union[int, SliceArg]) -> Union[Number, Self]:
         if isinstance(index, slice):
             return _slice_sequence(self, index)
         size = len(self)
@@ -66,79 +69,85 @@ class _Sequence:
     def __iter__(self) -> Iterator[Number]:
         return iter(self._computation)
 
-    def __add__(self, other: SeqOrNumber) -> "_Sequence":
-        return _binop(self, other, operator.add)
+    def __add__(self, other: SeqOrNumber) -> Self:
+        return _binop(type(self), self, other, operator.add)
 
-    def __radd__(self, other: SeqOrNumber) -> "_Sequence":
-        return _binop(other, self, operator.add)
+    def __radd__(self, other: SeqOrNumber) -> Self:
+        return _binop(type(self), other, self, operator.add)
 
-    def __sub__(self, other: SeqOrNumber) -> "_Sequence":
-        return _binop(self, other, operator.sub)
+    def __sub__(self, other: SeqOrNumber) -> Self:
+        return _binop(type(self), self, other, operator.sub)
 
-    def __rsub__(self, other: SeqOrNumber) -> "_Sequence":
-        return _binop(other, self, operator.sub)
+    def __rsub__(self, other: SeqOrNumber) -> Self:
+        return _binop(type(self), other, self, operator.sub)
 
-    def __mul__(self, other: SeqOrNumber) -> "_Sequence":
-        return _binop(self, other, operator.mul)
+    def __mul__(self, other: SeqOrNumber) -> Self:
+        return _binop(type(self), self, other, operator.mul)
 
-    def __rmul__(self, other: SeqOrNumber) -> "_Sequence":
-        return _binop(other, self, operator.mul)
+    def __rmul__(self, other: SeqOrNumber) -> Self:
+        return _binop(type(self), other, self, operator.mul)
 
-    def __truediv__(self, other: SeqOrNumber) -> "_Sequence":
-        return _binop(self, other, operator.truediv)
+    def __truediv__(self, other: SeqOrNumber) -> Self:
+        return _binop(type(self), self, other, operator.truediv)
 
-    def __rtruediv__(self, other: SeqOrNumber) -> "_Sequence":
-        return _binop(other, self, operator.truediv)
+    def __rtruediv__(self, other: SeqOrNumber) -> Self:
+        return _binop(type(self), other, self, operator.truediv)
 
-    def __floordiv__(self, other: SeqOrNumber) -> "_Sequence":
-        return _binop(self, other, operator.floordiv)
+    def __floordiv__(self, other: SeqOrNumber) -> Self:
+        return _binop(type(self), self, other, operator.floordiv)
 
-    def __rfloordiv__(self, other: SeqOrNumber) -> "_Sequence":
-        return _binop(other, self, operator.floordiv)
+    def __rfloordiv__(self, other: SeqOrNumber) -> Self:
+        return _binop(type(self), other, self, operator.floordiv)
 
-    def __mod__(self, other: SeqOrNumber) -> "_Sequence":
-        return _binop(self, other, operator.mod)
+    def __mod__(self, other: SeqOrNumber) -> Self:
+        return _binop(type(self), self, other, operator.mod)
 
-    def __rmod__(self, other: SeqOrNumber) -> "_Sequence":
-        return _binop(other, self, operator.mod)
+    def __rmod__(self, other: SeqOrNumber) -> Self:
+        return _binop(type(self), other, self, operator.mod)
 
-    def __pow__(self, other: SeqOrNumber) -> "_Sequence":
-        return _binop(self, other, operator.pow)
+    def __pow__(self, other: SeqOrNumber) -> Self:
+        return _binop(type(self), self, other, operator.pow)
 
-    def __rpow__(self, other: SeqOrNumber) -> "_Sequence":
-        return _binop(other, self, operator.pow)
+    def __rpow__(self, other: SeqOrNumber) -> Self:
+        return _binop(type(self), other, self, operator.pow)
 
-    def __neg__(self) -> "_Sequence":
+    def __neg__(self) -> Self:
         return _unop(self, operator.neg)
 
-    def __pos__(self) -> "_Sequence":
+    def __pos__(self) -> Self:
         return _unop(self, operator.pos)
 
-    def __abs__(self) -> "_Sequence":
+    def __abs__(self) -> Self:
         return _unop(self, operator.abs)
 
-    def __lt__(self, other: SeqOrNumber) -> "_Sequence":
-        return _binop(self, other, operator.lt)
+    def __eq__(self, other: SeqOrNumber) -> Self:  # type: ignore[override]
+        return _binop(type(self), self, other, operator.eq)
 
-    def __le__(self, other: SeqOrNumber) -> "_Sequence":
-        return _binop(self, other, operator.le)
+    def __ne__(self, other: SeqOrNumber) -> Self:  # type: ignore[override]
+        return _binop(type(self), self, other, operator.ne)
 
-    def __gt__(self, other: SeqOrNumber) -> "_Sequence":
-        return _binop(self, other, operator.gt)
+    def __lt__(self, other: SeqOrNumber) -> Self:
+        return _binop(type(self), self, other, operator.lt)
 
-    def __ge__(self, other: SeqOrNumber) -> "_Sequence":
-        return _binop(self, other, operator.ge)
+    def __le__(self, other: SeqOrNumber) -> Self:
+        return _binop(type(self), self, other, operator.le)
 
-    def __floor__(self) -> "_Sequence":
+    def __gt__(self, other: SeqOrNumber) -> Self:
+        return _binop(type(self), self, other, operator.gt)
+
+    def __ge__(self, other: SeqOrNumber) -> Self:
+        return _binop(type(self), self, other, operator.ge)
+
+    def __floor__(self) -> Self:
         return _unop(self, math.floor)
 
-    def __ceil__(self) -> "_Sequence":
+    def __ceil__(self) -> Self:
         return _unop(self, math.ceil)
 
-    def __trunc__(self) -> "_Sequence":
+    def __trunc__(self) -> Self:
         return _unop(self, math.trunc)
 
-    def __round__(self, ndigits: Optional[int] = None) -> "_Sequence":
+    def __round__(self, ndigits: Optional[int] = None) -> Self:
         def rounder(value: Number) -> Number:
             if ndigits is None:
                 return round(value)
@@ -238,17 +247,17 @@ def _coerce(value: SeqOrNumber) -> _Sequence:
     )
 
 
-def _binop(left: SeqOrNumber, right: SeqOrNumber, op: _BinOp) -> _Sequence:
-    return _Sequence.for_computation(
+def _binop(typ: type[_S], left: SeqOrNumber, right: SeqOrNumber, op: _BinOp) -> _S:
+    return typ.for_computation(
         _BinOpComputation(left=_coerce(left), right=_coerce(right), op=op)
     )
 
 
-def _unop(seq: _Sequence, op: _UnaryOp) -> _Sequence:
-    return _Sequence.for_computation(_UnaryOpComputation(seq=seq, op=op))
+def _unop(seq: _S, op: _UnaryOp) -> _S:
+    return type(seq).for_computation(_UnaryOpComputation(seq=seq, op=op))
 
 
-def _slice_sequence(seq: _Sequence, sl: SliceArg) -> _Sequence:
+def _slice_sequence(seq: _S, sl: SliceArg) -> _S:
     step = 1 if sl.step is None else sl.step
     start = 0 if sl.start is None else sl.start
     if step <= 0 or start < 0 or (sl.stop is not None and sl.stop < 0):
@@ -259,7 +268,7 @@ def _slice_sequence(seq: _Sequence, sl: SliceArg) -> _Sequence:
     else:
         actual_stop = source_len if sl.stop is None else min(sl.stop, source_len)
         length = max(0, (actual_stop - start + step - 1) // step)
-    return _Sequence.for_computation(
+    return type(seq).for_computation(
         _SlicedComputation(source=seq, start=start, step=step, length=length)
     )
 
@@ -294,7 +303,7 @@ def maximum(left: SeqOrNumber, right: SeqOrNumber) -> NumberSequence:
     >>> list(maximum(count(), 3)[:6])
     [3, 3, 3, 3, 4, 5]
     """
-    return _binop(left, right, max)
+    return _binop(_Sequence, left, right, max)
 
 
 def minimum(left: SeqOrNumber, right: SeqOrNumber) -> NumberSequence:
@@ -304,4 +313,4 @@ def minimum(left: SeqOrNumber, right: SeqOrNumber) -> NumberSequence:
     >>> list(minimum(count(), 3)[:6])
     [0, 1, 2, 3, 3, 3]
     """
-    return _binop(left, right, min)
+    return _binop(_Sequence, left, right, min)

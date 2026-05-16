@@ -9,10 +9,12 @@ from ._seq import take as _take
 
 class TestCoercion(unittest.TestCase):
     def test_int_on_left_matches_explicit_constant(self) -> None:
-        assert_that(3 + count(), equal_to(constant(3) + count()))
+        eq_seq = (3 + count()) == (constant(3) + count())
+        assert_that(_take(eq_seq, 10), equal_to([True] * 10))
 
     def test_int_on_right_matches_explicit_constant(self) -> None:
-        assert_that(count() + 3, equal_to(count() + constant(3)))
+        eq_seq = (count() + 3) == (count() + constant(3))
+        assert_that(_take(eq_seq, 10), equal_to([True] * 10))
 
     def test_float_coerces(self) -> None:
         seq = 0.5 + count()

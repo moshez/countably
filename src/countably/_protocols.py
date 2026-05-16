@@ -88,6 +88,10 @@ class NumberSequence(Protocol):
 
     def __abs__(self) -> Self: ...
 
+    def __eq__(self, other: SeqOrNumber) -> Self: ...  # type: ignore[override]
+
+    def __ne__(self, other: SeqOrNumber) -> Self: ...  # type: ignore[override]
+
     def __lt__(self, other: SeqOrNumber) -> Self: ...
 
     def __le__(self, other: SeqOrNumber) -> Self: ...
