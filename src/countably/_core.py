@@ -275,7 +275,7 @@ def count() -> NumberSequence:
     The basic generator used to build everything else.
 
     >>> from countably import count
-    >>> [count()[i] for i in range(5)]
+    >>> list(count()[:5])
     [0, 1, 2, 3, 4]
     """
     return _Sequence.for_computation(_CountComputation())
@@ -285,7 +285,7 @@ def maximum(left: SeqOrNumber, right: SeqOrNumber) -> NumberSequence:
     """Return the element-wise maximum of two sequences (or sequence + number).
 
     >>> from countably import count, maximum
-    >>> [maximum(count(), 3)[i] for i in range(6)]
+    >>> list(maximum(count(), 3)[:6])
     [3, 3, 3, 3, 4, 5]
     """
     return _binop(left, right, max)
@@ -295,7 +295,7 @@ def minimum(left: SeqOrNumber, right: SeqOrNumber) -> NumberSequence:
     """Return the element-wise minimum of two sequences (or sequence + number).
 
     >>> from countably import count, minimum
-    >>> [minimum(count(), 3)[i] for i in range(6)]
+    >>> list(minimum(count(), 3)[:6])
     [0, 1, 2, 3, 3, 3]
     """
     return _binop(left, right, min)

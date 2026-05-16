@@ -117,7 +117,7 @@ no recursion, no state:
     phi = (1 + math.sqrt(5)) / 2
     fib = round(phi ** count() / math.sqrt(5))
 
-    [fib[n] for n in range(12)]
+    list(fib[:12])
     # [0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89]
 
 (Valid for ``n`` up to ~70 before floating-point precision gives out.)
