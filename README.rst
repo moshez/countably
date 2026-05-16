@@ -26,8 +26,8 @@ write them on paper, and evaluate them on demand:
     powers_of_two = 2 ** count()                  # 1, 2, 4, 8, 16, ...
     every_third = count()[2::3]                   # 2, 5, 8, 11, ...
 
-The primitives are just :func:`constant` and :func:`count`. Arithmetic,
-comparisons, slicing, and element-wise :func:`maximum` / :func:`minimum`
+The primitives are just ``constant`` and ``count``. Arithmetic,
+comparisons, slicing, and element-wise ``maximum`` / ``minimum``
 build everything else. Plain numbers are coerced automatically, so
 ``3 + 5 * count()`` is equivalent to ``constant(3) + constant(5) * count()``.
 
