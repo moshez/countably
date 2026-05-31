@@ -1,8 +1,8 @@
 """Lazy, immutable infinite sequences of numbers with element-wise arithmetic.
 
-The primitives are :func:`constant` and :func:`count`; everything else is
-built from them via arithmetic, comparison, rounding, slicing and the
-helpers :func:`maximum` / :func:`minimum`.
+The primitives are :func:`constant` and :func:`count`; everything else is built
+from them via arithmetic, comparison, rounding, slicing and the element-wise
+:func:`maximum` and :func:`minimum` helpers.
 """
 
 import importlib.metadata

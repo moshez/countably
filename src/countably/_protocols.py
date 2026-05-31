@@ -19,14 +19,6 @@ else:
     SliceArg = slice
 
 
-class _Computation(Protocol):
-    def __len__(self) -> int: ...
-
-    def __getitem__(self, index: int) -> Number: ...
-
-    def __iter__(self) -> Iterator[Number]: ...
-
-
 @runtime_checkable
 class NumberSequence(Protocol):
     """A lazy, immutable sequence of numbers with element-wise arithmetic.
@@ -88,9 +80,11 @@ class NumberSequence(Protocol):
 
     def __abs__(self) -> Self: ...
 
-    def __eq__(self, other: SeqOrNumber) -> Self: ...  # type: ignore[override]
+    def __eq__(self, other: SeqOrNumber) -> Self:  # type: ignore[override]
+        ...
 
-    def __ne__(self, other: SeqOrNumber) -> Self: ...  # type: ignore[override]
+    def __ne__(self, other: SeqOrNumber) -> Self:  # type: ignore[override]
+        ...
 
     def __lt__(self, other: SeqOrNumber) -> Self: ...
 

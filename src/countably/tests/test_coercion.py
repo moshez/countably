@@ -1,28 +1,31 @@
-import unittest
+"""Tests for automatic coercion of plain numbers into sequences."""
 
-from hamcrest import assert_that, equal_to
+import unittest
 
 from countably import constant, count
 
-from ._seq import take as _take
+from ._seq import assert_at, assert_prefix
 
 
 class TestCoercion(unittest.TestCase):
+    """Plain numbers are coerced into constant sequences in operations."""
+
     def test_int_on_left_matches_explicit_constant(self) -> None:
-        eq_seq = (3 + count()) == (constant(3) + count())
-        assert_that(_take(eq_seq, 10), equal_to([True] * 10))
+        """A left-hand int coerces just like an explicit constant."""
+        assert_prefix((3 + count()) == (constant(3) + count()), [True] * 10)
 
     def test_int_on_right_matches_explicit_constant(self) -> None:
-        eq_seq = (count() + 3) == (count() + constant(3))
-        assert_that(_take(eq_seq, 10), equal_to([True] * 10))
+        """A right-hand int coerces just like an explicit constant."""
+        assert_prefix((count() + 3) == (count() + constant(3)), [True] * 10)
 
     def test_float_coerces(self) -> None:
-        seq = 0.5 + count()
-        assert_that(_take(seq, 3), equal_to([0.5, 1.5, 2.5]))
+        """A float operand is coerced into a constant."""
+        assert_prefix(0.5 + count(), [0.5, 1.5, 2.5])
 
     def test_chained_coercion(self) -> None:
-        seq = 3 + 5 * count()
-        assert_that(_take(seq, 4), equal_to([3, 8, 13, 18]))
+        """Coercion works through a chain of operations."""
+        assert_prefix(100 - 10 * count(), [100, 90, 80, 70])
 
     def test_coerced_value_at_index(self) -> None:
-        assert_that((10 - count())[3], equal_to(7))
+        """A coerced expression indexes to the expected element."""
+        assert_at(10 - count(), 3, 7)
