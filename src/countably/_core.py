@@ -3,16 +3,23 @@ from __future__ import annotations
 import functools
 import itertools
 import math
-import operator
 import sys
 from dataclasses import dataclass
-from typing import Callable, Iterator, Optional, Self, TypeVar, Union
+from typing import Callable, Iterator, Optional, Protocol, Self, TypeVar, Union
 
-from ._protocols import NumberSequence, Number, SeqOrNumber, SliceArg, _Computation
+from ._protocols import NumberSequence, Number, SeqOrNumber, SliceArg
 
 _BinOp = Callable[[Number, Number], Number]
 _UnaryOp = Callable[[Number], Number]
 _S = TypeVar("_S", bound="_Sequence")
+
+
+class _Computation(Protocol):
+    def __len__(self) -> int: ...
+
+    def __getitem__(self, index: int) -> Number: ...
+
+    def __iter__(self) -> Iterator[Number]: ...
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -21,6 +28,14 @@ class _Cache:
 
     @classmethod
     def for_computation(cls, computation: _Computation) -> "_Cache":
+        """Wrap an LRU-memoized view of ``computation``'s element lookups.
+
+        Args:
+            computation: The computation whose ``__getitem__`` to memoize.
+
+        Returns:
+            A cache that returns memoized elements of ``computation``.
+        """
         return cls(fn=functools.lru_cache(maxsize=100)(computation.__getitem__))
 
     def __call__(self, index: int) -> Number:
@@ -29,20 +44,28 @@ class _Cache:
 
 @dataclass(frozen=True, slots=True, kw_only=True, eq=False)
 class _Sequence:
-    _computation: _Computation
-    _cache: _Cache
+    computation: _Computation
+    cache: _Cache
 
     __hash__ = None  # type: ignore[assignment]
 
     @classmethod
     def for_computation(cls, computation: _Computation) -> Self:
+        """Build a sequence backed by ``computation`` and a fresh cache.
+
+        Args:
+            computation: The computation that produces the sequence's elements.
+
+        Returns:
+            A sequence whose elements come from ``computation``.
+        """
         return cls(
-            _computation=computation,
-            _cache=_Cache.for_computation(computation),
+            computation=computation,
+            cache=_Cache.for_computation(computation),
         )
 
     def __len__(self) -> int:
-        return len(self._computation)
+        return len(self.computation)
 
     def __bool__(self) -> bool:
         raise TypeError("NumberSequence has no boolean value")
@@ -64,79 +87,79 @@ class _Sequence:
             position += size
         if position < 0 or position >= size:
             raise IndexError(index)
-        return self._cache(position)
+        return self.cache(position)
 
     def __iter__(self) -> Iterator[Number]:
-        return iter(self._computation)
+        return iter(self.computation)
 
     def __add__(self, other: SeqOrNumber) -> Self:
-        return _binop(type(self), self, other, operator.add)
+        return _binop(type(self), self, other, lambda left, right: left + right)
 
     def __radd__(self, other: SeqOrNumber) -> Self:
-        return _binop(type(self), other, self, operator.add)
+        return _binop(type(self), other, self, lambda left, right: left + right)
 
     def __sub__(self, other: SeqOrNumber) -> Self:
-        return _binop(type(self), self, other, operator.sub)
+        return _binop(type(self), self, other, lambda left, right: left - right)
 
     def __rsub__(self, other: SeqOrNumber) -> Self:
-        return _binop(type(self), other, self, operator.sub)
+        return _binop(type(self), other, self, lambda left, right: left - right)
 
     def __mul__(self, other: SeqOrNumber) -> Self:
-        return _binop(type(self), self, other, operator.mul)
+        return _binop(type(self), self, other, lambda left, right: left * right)
 
     def __rmul__(self, other: SeqOrNumber) -> Self:
-        return _binop(type(self), other, self, operator.mul)
+        return _binop(type(self), other, self, lambda left, right: left * right)
 
     def __truediv__(self, other: SeqOrNumber) -> Self:
-        return _binop(type(self), self, other, operator.truediv)
+        return _binop(type(self), self, other, lambda left, right: left / right)
 
     def __rtruediv__(self, other: SeqOrNumber) -> Self:
-        return _binop(type(self), other, self, operator.truediv)
+        return _binop(type(self), other, self, lambda left, right: left / right)
 
     def __floordiv__(self, other: SeqOrNumber) -> Self:
-        return _binop(type(self), self, other, operator.floordiv)
+        return _binop(type(self), self, other, lambda left, right: left // right)
 
     def __rfloordiv__(self, other: SeqOrNumber) -> Self:
-        return _binop(type(self), other, self, operator.floordiv)
+        return _binop(type(self), other, self, lambda left, right: left // right)
 
     def __mod__(self, other: SeqOrNumber) -> Self:
-        return _binop(type(self), self, other, operator.mod)
+        return _binop(type(self), self, other, lambda left, right: left % right)
 
     def __rmod__(self, other: SeqOrNumber) -> Self:
-        return _binop(type(self), other, self, operator.mod)
+        return _binop(type(self), other, self, lambda left, right: left % right)
 
     def __pow__(self, other: SeqOrNumber) -> Self:
-        return _binop(type(self), self, other, operator.pow)
+        return _binop(type(self), self, other, lambda left, right: left**right)
 
     def __rpow__(self, other: SeqOrNumber) -> Self:
-        return _binop(type(self), other, self, operator.pow)
+        return _binop(type(self), other, self, lambda left, right: left**right)
 
     def __neg__(self) -> Self:
-        return _unop(self, operator.neg)
+        return _unop(self, lambda value: -value)
 
     def __pos__(self) -> Self:
-        return _unop(self, operator.pos)
+        return _unop(self, lambda value: +value)
 
     def __abs__(self) -> Self:
-        return _unop(self, operator.abs)
+        return _unop(self, abs)
 
     def __eq__(self, other: SeqOrNumber) -> Self:  # type: ignore[override]
-        return _binop(type(self), self, other, operator.eq)
+        return _binop(type(self), self, other, lambda left, right: left == right)
 
     def __ne__(self, other: SeqOrNumber) -> Self:  # type: ignore[override]
-        return _binop(type(self), self, other, operator.ne)
+        return _binop(type(self), self, other, lambda left, right: left != right)
 
     def __lt__(self, other: SeqOrNumber) -> Self:
-        return _binop(type(self), self, other, operator.lt)
+        return _binop(type(self), self, other, lambda left, right: left < right)
 
     def __le__(self, other: SeqOrNumber) -> Self:
-        return _binop(type(self), self, other, operator.le)
+        return _binop(type(self), self, other, lambda left, right: left <= right)
 
     def __gt__(self, other: SeqOrNumber) -> Self:
-        return _binop(type(self), self, other, operator.gt)
+        return _binop(type(self), self, other, lambda left, right: left > right)
 
     def __ge__(self, other: SeqOrNumber) -> Self:
-        return _binop(type(self), self, other, operator.ge)
+        return _binop(type(self), self, other, lambda left, right: left >= right)
 
     def __floor__(self) -> Self:
         return _unop(self, math.floor)
@@ -192,7 +215,7 @@ class _BinOpComputation:
         return min(len(self.left), len(self.right))
 
     def __getitem__(self, index: int) -> Number:
-        return self.op(self.left._cache(index), self.right._cache(index))
+        return self.op(self.left.cache(index), self.right.cache(index))
 
     def __iter__(self) -> Iterator[Number]:
         return map(self.op, self.left, self.right)
@@ -207,7 +230,7 @@ class _UnaryOpComputation:
         return len(self.seq)
 
     def __getitem__(self, index: int) -> Number:
-        return self.op(self.seq._cache(index))
+        return self.op(self.seq.cache(index))
 
     def __iter__(self) -> Iterator[Number]:
         return map(self.op, self.seq)
@@ -224,7 +247,7 @@ class _SlicedComputation:
         return self.length
 
     def __getitem__(self, index: int) -> Number:
-        return self.source._cache(self.start + self.step * index)
+        return self.source.cache(self.start + self.step * index)
 
     def __iter__(self) -> Iterator[Number]:
         stop = (
@@ -274,7 +297,13 @@ def _slice_sequence(seq: _S, sl: SliceArg) -> _S:
 
 
 def constant(value: Number) -> NumberSequence:
-    """Return an infinite sequence whose every element is *value*.
+    """Return an infinite sequence whose every element is ``value``.
+
+    Args:
+        value: The number repeated at every index of the sequence.
+
+    Returns:
+        An infinite sequence of ``value``.
 
     >>> from countably import constant
     >>> seq = constant(7)
@@ -289,6 +318,9 @@ def count() -> NumberSequence:
 
     The basic generator used to build everything else.
 
+    Returns:
+        The infinite sequence of the natural numbers.
+
     >>> from countably import count
     >>> list(count()[:5])
     [0, 1, 2, 3, 4]
@@ -299,6 +331,13 @@ def count() -> NumberSequence:
 def maximum(left: SeqOrNumber, right: SeqOrNumber) -> NumberSequence:
     """Return the element-wise maximum of two sequences (or sequence + number).
 
+    Args:
+        left: The first sequence or number to compare.
+        right: The second sequence or number to compare.
+
+    Returns:
+        A sequence of the larger element at each position.
+
     >>> from countably import count, maximum
     >>> list(maximum(count(), 3)[:6])
     [3, 3, 3, 3, 4, 5]
@@ -308,6 +347,13 @@ def maximum(left: SeqOrNumber, right: SeqOrNumber) -> NumberSequence:
 
 def minimum(left: SeqOrNumber, right: SeqOrNumber) -> NumberSequence:
     """Return the element-wise minimum of two sequences (or sequence + number).
+
+    Args:
+        left: The first sequence or number to compare.
+        right: The second sequence or number to compare.
+
+    Returns:
+        A sequence of the smaller element at each position.
 
     >>> from countably import count, minimum
     >>> list(minimum(count(), 3)[:6])

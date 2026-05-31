@@ -16,7 +16,7 @@ nox
 Run specific sessions:
 ```bash
 nox -s tests    # Run tests with coverage
-nox -s lint     # Run black and flake8
+nox -s lint     # Run black and stolid
 nox -s mypy     # Run type checking
 ```
 
